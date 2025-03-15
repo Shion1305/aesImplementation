@@ -108,6 +108,14 @@ impl AES {
         fn rot_word(word: Word) -> Word {
             [word[1], word[2], word[3], word[0]]
         }
+        
+        fn sub_word(word: Word) -> Word {
+            let mut new_word = [0u8; 4];
+            for i in 0..4 {
+                new_word[i] = AES::S_BOX[word[i] as usize];
+            }
+            new_word
+        }
     }
 }
 
