@@ -12,12 +12,17 @@ type Word = [u8; 4];
 // State[column][row]
 type State = [Word; 4];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct AES {}
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct AES {
+    key: Vec<u8>,
+}
 
 impl AES {
-    fn new() -> Self {
-        Self {}
+    fn new(key: &[u8]) -> Result<Self, &'static str> {
+        if ![16, 24, 32].contains(&key.len()) {
+            return Err("Invalid key length");
+        }
+        Ok(Self { key: key.to_vec() })
     }
 
     #[inline]
@@ -52,7 +57,6 @@ impl AES {
         let state = AES::block2state(block);
         AES::log_state(&state);
 
-
         // impl here
 
         AES::state2block(state)
@@ -61,7 +65,7 @@ impl AES {
 
 #[cfg(test)]
 mod tests {
-    use crate::{aes_log, Block, AES};
+    use crate::{AES, Block, aes_log};
 
     fn setup() {
         aes_log::clear();
@@ -71,12 +75,25 @@ mod tests {
     fn test() {
         setup();
         let plain_text = b"k\xc1\xbe\xe2.@\x9f\x96\xe9=~\x11s\x93\x17*";
-        let aes = AES::new();
-        let encrypted = aes.encrypt_block(Block(*plain_text));
+        let aes = AES::new(b"+~\x15\x16(\xae\xd2\xa6\xab\xf7\x15\x88\t\xcfO<")
+            .ok()
+            .unwrap();
+        let _encrypted = aes.encrypt_block(Block(*plain_text));
         let log = aes_log::get();
         let expected = [plain_text];
-        log.borrow().iter().zip(expected.into_iter()).for_each(|(a, b)| {
-            assert_eq!(&a.0, b);
-        });
+        log.borrow()
+            .iter()
+            .zip(expected.into_iter())
+            .for_each(|(a, b)| {
+                assert_eq!(&a.0, b);
+            });
+    }
+
+    #[test]
+    fn fail_on_invalid_key_length() {
+        setup();
+        let key = [0u8; 10];
+        let aes = AES::new(&key);
+        assert_eq!(aes, Err("Invalid key length"));
     }
 }
