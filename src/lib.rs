@@ -116,6 +116,14 @@ impl AES {
             }
             new_word
         }
+        
+        fn word_xor(word1: Word, word2: Word) -> Word {
+            let mut new_word = [0u8; 4];
+            for i in 0..4 {
+                new_word[i] = word1[i] ^ word2[i];
+            }
+            new_word
+        }
     }
 }
 
