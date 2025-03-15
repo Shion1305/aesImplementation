@@ -108,7 +108,7 @@ impl AES {
         fn rot_word(word: Word) -> Word {
             [word[1], word[2], word[3], word[0]]
         }
-        
+
         fn sub_word(word: Word) -> Word {
             let mut new_word = [0u8; 4];
             for i in 0..4 {
@@ -116,13 +116,58 @@ impl AES {
             }
             new_word
         }
-        
+
         fn word_xor(word1: Word, word2: Word) -> Word {
             let mut new_word = [0u8; 4];
             for i in 0..4 {
                 new_word[i] = word1[i] ^ word2[i];
             }
             new_word
+        }
+        let mut wlist: Vec<Word> = Vec::new();
+        let rcon = [
+            [0x01, 0x00, 0x00, 0x00],
+            [0x02, 0x00, 0x00, 0x00],
+            [0x04, 0x00, 0x00, 0x00],
+            [0x08, 0x00, 0x00, 0x00],
+            [0x10, 0x00, 0x00, 0x00],
+            [0x20, 0x00, 0x00, 0x00],
+            [0x40, 0x00, 0x00, 0x00],
+            [0x80, 0x00, 0x00, 0x00],
+            [0x1b, 0x00, 0x00, 0x00],
+            [0x36, 0x00, 0x00, 0x00],
+        ];
+
+        let nk = match self.key.len() {
+            16 => 4,
+            24 => 6,
+            32 => 8,
+            _ => unreachable!(),
+        };
+
+        let nr = match nk {
+            4 => 10,
+            6 => 12,
+            8 => 14,
+            _ => unreachable!(),
+        };
+
+        for i in 0..nk {
+            wlist.push([
+                self.key[i * 4],
+                self.key[i * 4 + 1],
+                self.key[i * 4 + 2],
+                self.key[i * 4 + 3],
+            ]);
+        }
+        for i in nk..4 * (nr + 1) {
+            let mut temp = wlist[i - 1];
+            if i % nk == 0 {
+                temp = word_xor(sub_word(rot_word(temp)), rcon[i / nk - 1]);
+            } else if nk == 8 && i % nk == 4 {
+                temp = sub_word(temp);
+            }
+            wlist.push(word_xor(wlist[i - nk], temp));
         }
     }
 }
